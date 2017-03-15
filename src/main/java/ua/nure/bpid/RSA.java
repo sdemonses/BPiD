@@ -8,52 +8,23 @@ import java.util.Random;
  */
 public class RSA {
 
-    private static final int lengthBit = 5;
+    private static final int DEFAULT_LENGTH_BIT = 256;
 
-    public static void encrypt(String input) {
-        BigInteger p = getKey(lengthBit), q = getKey(lengthBit);
+    private int lengthBit = 5;
 
-        BigInteger n = p.multiply(q);
+    private BigInteger d;
+    private BigInteger n;
+    private BigInteger e;
 
-        BigInteger f = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
-
-        BigInteger e = getLess(lengthBit, f);
-
-        BigInteger d = generateKey(f, e);
-
-        System.out.println("P``````````" + p);
-        System.out.println("Q``````````" + q);
-        System.out.println("N``````````" + n);
-        System.out.println("F``````````" + f);
-        System.out.println("E``````````" + e);
-        System.out.println("D``````````" + d);
-
-        char[] array = input.toCharArray();
-
-        BigInteger[] arrInt = new BigInteger[array.length];
-
-        arrInt[0] = BigInteger.valueOf(array[0]);
-
-        for (int i = 1; i < array.length; i++) {
-            arrInt[i] = BigInteger.valueOf(array[i] + array[i - 1]).mod(n);
-        }
-
-        for (BigInteger anArrInt : arrInt) {
-            System.out.println(anArrInt);
-        }
-
-        for (int i = 0; i < arrInt.length; i++) {
-            arrInt[i] = arrInt[i].modPow(e, n);
-        }
-
-        System.out.println("RSA.encrypt");
-        for (BigInteger anArrInt : arrInt) {
-            System.out.println(anArrInt);
-        }
-        decrypt(arrInt, d, n);
+    public RSA() {
+        lengthBit = DEFAULT_LENGTH_BIT;
     }
 
-    private static BigInteger getLess(int length, BigInteger f) {
+    public RSA(int lengthBit) {
+        this.lengthBit = lengthBit;
+    }
+
+    private BigInteger getLess(int length, BigInteger f) {
         BigInteger numb = getKey(length);
         while (numb.compareTo(f) >= 1) {
             numb = getKey(length);
@@ -61,11 +32,48 @@ public class RSA {
         return numb;
     }
 
-    private static BigInteger getKey(int length) {
+    private BigInteger getKey(int length) {
         return BigInteger.probablePrime(length, new Random());
     }
 
-    private static BigInteger generateKey(BigInteger phi, BigInteger e) {
+    public BigInteger[] encrypt(String input) {
+        char[] array = input.toCharArray();
+
+        BigInteger[] arrInt = new BigInteger[array.length];
+
+        arrInt[0] = BigInteger.valueOf(array[0]).modPow(e,n);
+
+        for (int i = 1; i < array.length; i++) {
+            arrInt[i] = BigInteger.valueOf(array[i] + array[i - 1]).mod(n).modPow(e,n);
+        }
+
+        return arrInt;
+    }
+
+    private String decrypt(BigInteger[] array) {
+        array[0] = array[0].modPow(d, n);
+
+        for (int i = 1; i < array.length; i++) {
+            array[i] = array[i].modPow(d, n);
+            array[i] = array[i].subtract(array[i - 1]).mod(n);
+        }
+        char[] chars = new char[array.length];
+        for (int i = 0; i < chars.length; i++) {
+            chars[i] = (char) array[i].intValue();
+        }
+
+        return new String(chars);
+    }
+
+    private void generateKeys() {
+        BigInteger p = getKey(lengthBit), q = getKey(lengthBit);
+        n = p.multiply(q);
+        BigInteger phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
+        e = getLess(lengthBit, phi);
+        d = identifyDKey(phi, e);
+    }
+
+    private BigInteger identifyDKey(BigInteger phi, BigInteger e) {
         BigInteger q, r, x1, x2, y1, y2;
         BigInteger[] mas = new BigInteger[2];
         if (e.compareTo(BigInteger.ZERO) == 0) {
@@ -100,21 +108,12 @@ public class RSA {
     }
 
     public static void main(String[] args) {
-        encrypt("asd");
+        String input = "Hello guys";
+        RSA rsa = new RSA();
+        rsa.generateKeys();
+        BigInteger[] arr = rsa.encrypt(input);
+        System.out.println(rsa.decrypt(arr));
 
     }
 
-
-    private static void decrypt(BigInteger[] array, BigInteger d, BigInteger n) {
-        BigInteger[] bigArr = new BigInteger[array.length];
-        System.out.println("RSA.decrypt");
-        for (int i = 0; i < array.length; i++) {
-            bigArr[i] = array[i].modPow(d, n);
-        }
-
-        for (BigInteger anArrInt : bigArr) {
-            System.out.println(anArrInt);
-        }
-
-    }
 }
