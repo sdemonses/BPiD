@@ -66,11 +66,17 @@ public class RSA {
     }
 
     private void generateKeys() {
-        BigInteger p = getKey(lengthBit), q = getKey(lengthBit);
-        n = p.multiply(q);
-        BigInteger phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
-        e = getLess(lengthBit, phi);
-        d = identifyDKey(phi, e);
+        BigInteger p, phi, q;
+
+            do {
+                p = getKey(lengthBit);
+                q = getKey(lengthBit);
+                n = p.multiply(q);
+                phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
+                e = getLess(lengthBit, phi);
+                d = identifyDKey(phi, e);
+            } while (!checkKey("a"));
+
     }
 
     private BigInteger identifyDKey(BigInteger phi, BigInteger e) {
@@ -105,6 +111,10 @@ public class RSA {
         if (y2.compareTo(BigInteger.ZERO) < 0)
             return (phi.subtract(y2));
         return y2;
+    }
+
+    private boolean checkKey(String input){
+         return decrypt(encrypt(input)).equals(input);
     }
 
     public static void main(String[] args) {
